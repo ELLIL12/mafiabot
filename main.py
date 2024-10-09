@@ -5,16 +5,16 @@ user_dict = {}
 
 # Словарь для хранения зарегистрированных пользователей и их кодов игр
 registered_users = {0: {'group': 'haha', 'id': []}, 1: {'group': 'Проверка 2', 'id': [1195384026], 'name': 'Ponyo'}}
-#роли игроков
+# роли игроков
 roles = []
 
-#первое взаимодействие с ботом
+# первое взаимодействие с ботом
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     bot.reply_to(message, "Привет, я бот для игры в мафию! Используйте команду /register, чтобы зарегистрироваться для игры.")
 
 
-#промежуточный этап запроса кода игры
+# промежуточный этап запроса кода игры
 @bot.message_handler(commands=['register'])
 def register_user(message):
     msg = bot.reply_to(message, "Пожалуйста, введите номер игры для регистрации:")
@@ -54,7 +54,7 @@ def check_message(message):
         markup = telebot.types.InlineKeyboardMarkup()
         button = telebot.types.InlineKeyboardButton("Перейти к боту", url=bot_link)
         markup.add(button)
-        #добавляем в словарь с регистрацией название группы и ее номер
+        # добавляем в словарь с регистрацией название группы и ее номер
         group_title = message.chat.title
         registered_users[max(registered_users) + 1] = {'group': group_title}
         registered_users[max(registered_users)]['id'] = []
@@ -71,9 +71,23 @@ def send_private_messages(chat_title):
         if registered_users[game_code]['group'] == chat_title:
             try:
                 for user_id in registered_users[game_code]['id']:
-                    bot.send_message(user_id, f'Привет! Твоя роль: ?')
+                    markup = telebot.types.InlineKeyboardMarkup()
+                    button1 = telebot.types.InlineKeyboardButton("мирный житель",
+                                                                 callback_data="мирный житель")
+                    markup.add(button1)
+
+                    # Отправляем сообщение с кнопками
+                    bot.send_message(user_id, "Привет! Твоя роль: ?", reply_markup=markup)
             except Exception as e:
                 print(f"Ошибка при отправке сообщения пользователю {user_id}: {e}")
+
+
+# вызов описания персонажа, следует написать описания всех персонажей
+@bot.callback_query_handler(func=lambda call: call.data == "мирный житель")
+def callback_greet(call):
+    bot.answer_callback_query(
+        call.id,
+        text='Ты - мирный житель. Твоя задача вычислить мафию и убедить всех избавиться от преступника днем', show_alert=True)
 
 
 def main():
