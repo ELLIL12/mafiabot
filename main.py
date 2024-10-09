@@ -4,7 +4,7 @@ bot = telebot.TeleBot('7883139018:AAGaMHDoRfVT6K2V7FaGQwETVxrRlP2Wu2M')
 user_dict = {}
 
 # Словарь для хранения зарегистрированных пользователей и их кодов игр
-registered_users = {0: {'group': 'haha', 'id': []}}
+registered_users = {0: {'group': 'haha', 'id': []}, 1: {'group': 'Проверка 2', 'id': [1195384026], 'name': 'Ponyo'}}
 #роли игроков
 roles = []
 
@@ -41,7 +41,7 @@ def process_game_code(message):
 @bot.message_handler(func=lambda message: True)
 def check_message(message):
     if 'играем' in message.text.lower():
-        send_private_messages()
+        send_private_messages(message.chat.title)
 
     if 'начать игру' in message.text.lower():
         # Получаем имя бота
@@ -66,12 +66,14 @@ def check_message(message):
 
 
 # отправка личных сообщений с ролью
-def send_private_messages():
-    for game_code in registered_users.items():
-        try:
-            bot.send_message(user_id, f'Привет, {user_name}! Твоя роль?')
-        except Exception as e:
-            print(f"Ошибка при отправке сообщения пользователю {user_id}: {e}")
+def send_private_messages(chat_title):
+    for game_code in registered_users:
+        if registered_users[game_code]['group'] == chat_title:
+            try:
+                for user_id in registered_users[game_code]['id']:
+                    bot.send_message(user_id, f'Привет! Твоя роль: ?')
+            except Exception as e:
+                print(f"Ошибка при отправке сообщения пользователю {user_id}: {e}")
 
 
 def main():
