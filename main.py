@@ -41,7 +41,19 @@ def process_game_code(message):
 @bot.message_handler(func=lambda message: True)
 def check_message(message):
     if 'играем' in message.text.lower():
-        send_private_messages(message.chat.title)
+        # блокировка добавлений новых участников, исключение из списка повторяющиеся id, проверка достаточности количества участников
+        for game_code in registered_users:
+            if registered_users[game_code]['group'] == message.chat.title:
+                if len(set(registered_users[game_code]['id'])) > 4:
+                    registered_users[game_code]['id'] = set(registered_users[game_code]['id'])
+                    send_private_messages(message.chat.title)
+                else:
+                    bot.send_message(message.chat.id,
+                                     f'У вас недостаточное количество игроков, игра будет неинтересной(. '
+                                     f'Минимальное количество: '
+                                     f'5, текущее количество: {len(set(registered_users[game_code]["id"]))}')
+
+
 
     if 'начать игру' in message.text.lower():
         # Получаем имя бота
@@ -61,7 +73,8 @@ def check_message(message):
 
         # Отправляем сообщение с клавиатурой
         bot.send_message(message.chat.id, f"Привет всем! Я - бот для игры в мафию. Уникальный кот вашей игры - {max(registered_users)}. "
-                              f"Все пользователи, желающие сыграть, напишите мне в личные сообщения команду \start",
+                              f"\n Все пользователи, желающие сыграть, напишите мне в личные сообщения команду \register"
+                                          f"\n Когда все желающие играть, будут зарегестрированы, напишите: играть, и мы начнем игру",
                          reply_markup=markup)
 
 
