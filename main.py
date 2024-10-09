@@ -1,12 +1,12 @@
 import telebot
 
-
 bot = telebot.TeleBot('7883139018:AAGaMHDoRfVT6K2V7FaGQwETVxrRlP2Wu2M')
 user_dict = {}
 
 # Словарь для хранения зарегистрированных пользователей и их кодов игр
-registered_users = {}
-
+registered_users = {0: {'group': 'haha', 'id': []}}
+#роли игроков
+roles = []
 
 #первое взаимодействие с ботом
 @bot.message_handler(commands=['start'])
@@ -26,10 +26,16 @@ def process_game_code(message):
     user_name = message.from_user.first_name
     game_code = message.text
 
-    # Сохраняем пользователя и код игры в словаре
-    registered_users[user_id] = {'name': user_name, 'game_code': game_code}
+    try:
+        registered_users[int(game_code)]['id'].append(user_id)
+        registered_users[int(game_code)]['name'] = user_name
+        # Сохраняем пользователя и код игры в словаре
+        bot.reply_to(message, f"{user_name}, вы успешно зарегистрированы на игру в группе {registered_users[int(game_code)]['group']}!")
+    except Exception as e:
+        bot.reply_to(message, f"{user_name}, такого номера игры не существует!")
 
-    bot.reply_to(message, f"{user_name}, вы успешно зарегистрированы на игру с номером: {game_code}!")
+    print(registered_users)
+
 
 
 @bot.message_handler(func=lambda message: True)
@@ -37,11 +43,31 @@ def check_message(message):
     if 'играем' in message.text.lower():
         send_private_messages()
 
+    if 'начать игру' in message.text.lower():
+        # Получаем имя бота
+        bot_username = bot.get_me().username
 
-#отправка личных сообщений с ролью
+        # Создаем ссылку
+        bot_link = f"https://t.me/{bot_username}"
+
+        # Создаем встроенную клавиатуру
+        markup = telebot.types.InlineKeyboardMarkup()
+        button = telebot.types.InlineKeyboardButton("Перейти к боту", url=bot_link)
+        markup.add(button)
+        #добавляем в словарь с регистрацией название группы и ее номер
+        group_title = message.chat.title
+        registered_users[max(registered_users) + 1] = {'group': group_title}
+        registered_users[max(registered_users)]['id'] = []
+
+        # Отправляем сообщение с клавиатурой
+        bot.send_message(message.chat.id, f"Привет всем! Я - бот для игры в мафию. Уникальный кот вашей игры - {max(registered_users)}. "
+                              f"Все пользователи, желающие сыграть, напишите мне в личные сообщения команду \start",
+                         reply_markup=markup)
+
+
+# отправка личных сообщений с ролью
 def send_private_messages():
-    for user_id, user_info in registered_users.items():
-        user_name = user_info['name']
+    for game_code in registered_users.items():
         try:
             bot.send_message(user_id, f'Привет, {user_name}! Твоя роль?')
         except Exception as e:
