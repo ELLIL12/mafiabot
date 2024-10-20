@@ -1,4 +1,5 @@
 import telebot
+import random
 
 bot = telebot.TeleBot('7883139018:AAGaMHDoRfVT6K2V7FaGQwETVxrRlP2Wu2M')
 user_dict = {}
@@ -44,7 +45,7 @@ def check_message(message):
         # блокировка добавлений новых участников, исключение из списка повторяющиеся id, проверка достаточности количества участников
         for game_code in registered_users:
             if registered_users[game_code]['group'] == message.chat.title:
-                if len(set(registered_users[game_code]['id'])) > 4:
+                if len(set(registered_users[game_code]['id'])) > 0:
                     registered_users[game_code]['id'] = set(registered_users[game_code]['id'])
                     send_private_messages(message.chat.title)
                 else:
@@ -83,28 +84,94 @@ def send_private_messages(chat_title):
     for game_code in registered_users:
         if registered_users[game_code]['group'] == chat_title:
             try:
-                for user_id in registered_users[game_code]['id']:
-                    markup = telebot.types.InlineKeyboardMarkup()
-                    button1 = telebot.types.InlineKeyboardButton("мирный житель",
-                                                                 callback_data="мирный житель")
-                    markup.add(button1)
+                # вызов класса и присвоение ролей игрокам
+                player_role = roles(registered_users[game_code]['id'])
+                registered_users[game_code]['id'] = player_role.role_for_all()
 
-                    # Отправляем сообщение с кнопками
-                    bot.send_message(user_id, "Привет! Твоя роль: ?", reply_markup=markup)
+                for user_id in registered_users[game_code]['id']:
+                    if registered_users[game_code]['id'][user_id] == 'liberal':
+                        markup = telebot.types.InlineKeyboardMarkup()
+                        button1 = telebot.types.InlineKeyboardButton("либерал",
+                                                                     callback_data="либерал")
+                        markup.add(button1)
+                        # Отправляем сообщение с кнопками
+                        bot.send_message(user_id, "Привет! Твоя роль: либерал", reply_markup=markup)
+                    elif registered_users[game_code]['id'][user_id] == 'fashist':
+                        markup = telebot.types.InlineKeyboardMarkup()
+                        button1 = telebot.types.InlineKeyboardButton("фашистик",
+                                                                     callback_data="фашистик")
+                        markup.add(button1)
+                        # Отправляем сообщение с кнопками
+                        bot.send_message(user_id, "Привет! Твоя роль: фашистик", reply_markup=markup)
+                    elif registered_users[game_code]['id'][user_id] == 'gitler':
+                        markup = telebot.types.InlineKeyboardMarkup()
+                        button1 = telebot.types.InlineKeyboardButton("гитлер",
+                                                                     callback_data="гитлер")
+                        markup.add(button1)
+                        # Отправляем сообщение с кнопками
+                        bot.send_message(user_id, "Привет! Твоя роль: гитлер", reply_markup=markup)
             except Exception as e:
                 print(f"Ошибка при отправке сообщения пользователю {user_id}: {e}")
 
 
 # вызов описания персонажа, следует написать описания всех персонажей
-@bot.callback_query_handler(func=lambda call: call.data == "мирный житель")
+@bot.callback_query_handler(func=lambda call: call.data == "фашистик")
 def callback_greet(call):
     bot.answer_callback_query(
         call.id,
-        text='Ты - мирный житель. Твоя задача вычислить мафию и убедить всех избавиться от преступника днем', show_alert=True)
+        text='Ты тут злой', show_alert=True)
 
+
+@bot.callback_query_handler(func=lambda call: call.data == "либерал")
+def callback_greet(call):
+    bot.answer_callback_query(
+        call.id,
+        text='Борешься зо злом', show_alert=True)
+
+
+@bot.callback_query_handler(func=lambda call: call.data == "гитлер")
+def callback_greet(call):
+    bot.answer_callback_query(
+        call.id,
+        text='Ты тут вообще самый злой', show_alert=True)
 
 def main():
     bot.polling(none_stop=True)
+
+
+class roles:
+    def __init__(self, sps):
+        self.count_of_membres = len(sps)
+        self.players = list(sps)
+        print(sps)
+        self.players_roles = {}
+        self.roles = []
+
+    def roles_from_count(self):
+        if self.count_of_membres == 5:
+            self.roles = ['liberal', 'liberal', 'liberal', 'fashist', 'hitler']
+        elif self.count_of_membres == 6:
+            self.roles = ['liberal', 'liberal', 'liberal', 'liberal', 'fashist', 'hitler']
+        elif self.count_of_membres == 7:
+            self.roles = ['liberal', 'liberal', 'liberal', 'liberal', 'fashist', 'fashist', 'hitler']
+        elif self.count_of_membres == 8:
+            self.roles = ['liberal', 'liberal', 'liberal', 'liberal', 'liberal', 'fashist', 'fashist', 'hitler']
+        elif self.count_of_membres == 9:
+            self.roles = ['liberal', 'liberal', 'liberal', 'liberal', 'liberal', 'fashist', 'fashist', 'fashist', 'hitler']
+        elif self.count_of_membres == 10:
+            self.roles = ['liberal', 'liberal', 'liberal', 'liberal', 'liberal', 'liberal', 'fashist', 'fashist', 'fashist',
+                          'hitler']
+        # test
+        elif self.count_of_membres == 2:
+            self.roles = ['fashist', 'liberal']
+        return self.roles
+
+    def role_for_all(self):
+        self.roles = self.roles_from_count()
+        random.shuffle(self.roles)
+        for i in range(self.count_of_membres):
+            self.players_roles[self.players[i]] = self.roles[i]
+        return self.players_roles
 
 
 if __name__ == "__main__":
