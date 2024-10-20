@@ -1,4 +1,5 @@
 import telebot
+import random
 
 bot = telebot.TeleBot('7883139018:AAGaMHDoRfVT6K2V7FaGQwETVxrRlP2Wu2M')
 user_dict = {}
@@ -102,6 +103,42 @@ def callback_greet(call):
         call.id,
         text='Ты - мирный житель. Твоя задача вычислить мафию и убедить всех избавиться от преступника днем', show_alert=True)
 
+
+#Класс карточек законов
+class Cards:
+    def __init__(self):
+        self.cards_in = ["fascist"] * 11 +  ["liberal"] * 6 #карты в колоде
+        self.cards_out = [] #сюда надо складывать карты которые откинули игроки
+
+    
+    #выкладка закона на стол
+    def card_on_board(self):
+        if len(self.cards_in) < 3:
+            self.cards_in = self.cards_out + self.cards_in
+            self.cards_out = []
+        card = random.choice(self.cards_in), # Рандомно выбираем первую карту
+        cards.remove(card)  # Удаляем 1 карту из списка карт в колоде
+        card = [card] +  [random.choice(self.cards_in)] # Рандомно выбираем вторую карту закидываем обе карты в общий список
+        cards.remove(card[1]) #Удаляем 2 карту из списка
+        card = card + [random.choice(self.cards_in)]# Рандомно выбираем третью карту закидываем три карты в общий список
+        cards.remove(card[2])  # Удаляем 3 карту из списка
+        return card
+
+
+class CardsOnBoard:
+    #два списка: либеральные карты на столе, фашистские карты на столе
+    def __init__(self):
+        self.onboard_liberal = []
+        self.onboard_fascist = []
+
+    def move(self, cards):
+        player_choose = cards.card_on_board
+        #сюда добавить что выбирает игрок что откидывает, что откидывается идет в cards.cards_out
+        #остальное идет президенту тоже самое происходит с выбором президента
+        if chosen_card == "liberal":
+            self.onboard_liberal.append(chosen_card)
+        else:
+            self.onboard_fascist.append(chosen_card)
 
 def main():
     bot.polling(none_stop=True)
