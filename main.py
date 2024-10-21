@@ -121,15 +121,13 @@ def send_private_messages(chat_title):
                     registered_users[game_code] = first_raspred(registered_users[game_code])
                     print(registered_users[game_code]['och'])
                     president = registered_users[game_code]['och'][0]
-                    chancellor = registered_users[game_code]['och'][len(registered_users[game_code]['och']) // 2]
 
                     # отправка сообщения в общую группу, нде идет разглашение того, кто является президентом и канцлером
                     bot.send_message(registered_users[game_code]['group_id'],
                                      f"Вот типо начали, your first president: "
-                                     f"{registered_users[game_code]['names'][president]}, "
-                                     f"your first chancellor: {registered_users[game_code]['names'][chancellor]} ")
+                                     f"{registered_users[game_code]['names'][president]}")
                     # запуск основной игры
-                    start_game(registered_users[game_code], president, chancellor)
+                    start_game(registered_users[game_code], president)
             except Exception as e:
                 print(f"Ошибка: {e}")
 
@@ -157,9 +155,26 @@ def callback_greet(call):
         text='Ты тут вообще самый злой', show_alert=True)
 
 
+@bot.callback_query_handler(func=lambda call: call.data[:2] == 'id')
+def callback_greet(call):
+    global waiting_for_answer, chancellor
+
+    user_id = call.message.chat.id
+    chancellor = int(call.data[2:])
+    print('idk')
+    # Удаляем предыдущее сообщение с кнопками
+    if user_id in user_message_ids:
+        bot.delete_message(user_id, user_message_ids[user_id])
+        del user_message_ids[user_id]
+
+    bot.send_message(call.message.chat.id, f'Вашим канцлерром будет назначен: {chancellor}')
+    waiting_for_answer = 0
+
+
 @bot.callback_query_handler(func=lambda call: call.data in ['fascist', "liberal"])
 def callback_greet(call):
     global waiting_for_answer
+
     user_id = call.message.chat.id
 
     # Удаляем предыдущее сообщение с кнопками
@@ -168,7 +183,8 @@ def callback_greet(call):
         del user_message_ids[user_id]
 
     bot.send_message(call.message.chat.id, f'You chose: {call.data}')
-    waiting_for_answer = 0
+    waiting_for_answer = call.data
+
 
 
 
@@ -198,10 +214,33 @@ def main():
     bot.polling(none_stop=True)
 
 
-def start_game(dict_of_group, president, chancellor):
-    global waiting_for_answer, cards_to_choose_2
+def start_game(dict_of_group, president):
+    global waiting_for_answer, cards_to_choose_2, chancellor
+
+    # выбор канцлера президентом
+
+    markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+    kostl = []
+    for i in dict_of_group['och']:
+        kostl.append(telebot.types.InlineKeyboardButton(dict_of_group['names'][i], callback_data='id'+str(i)))
+
+    markup.add(*kostl)
+
+    waiting_for_answer = 1
+    sent_message = bot.send_message(president,
+                                    f"okay, mister president, you can choose the chancellor", reply_markup=markup)
+
+    # Сохраняем ID отправленного сообщения в памяти пользователя
+    user_message_ids[president] = sent_message.message_id
+
+    while waiting_for_answer == 1:
+        pass
+
+
 
     coloda = Cards()
+    pole = CardsOnBoard()
+
     cards_to_choose = coloda.card_on_board()
     # отправляю президенту карты, которые ему выпали, добавить кнопки
     # Создаем клавиатуру
@@ -250,8 +289,46 @@ def start_game(dict_of_group, president, chancellor):
     user_message_ids[chancellor] = sent_message.message_id
 
     # останавливаю работу программы до его ответа
-    while waiting_for_answer:
+    while waiting_for_answer == 1:
         pass
+
+    dict_of_group['last_card'] = waiting_for_answer
+
+    # поставить карту на поле
+    pole.add(waiting_for_answer)
+
+    onboard_liberal, onboard_fascist = pole.check()
+
+    # выполнение особого протокола в зависимости от количества карт на столе
+    if onboard_fascist == 2:
+        proverka_igroka()
+
+    elif onboard_fascist == 3:
+        vibor()
+
+    elif onboard_fascist == 4 or onboard_fascist == 5:
+        liquidation()
+
+    # выбор нового президента
+    dict_of_group['och'].append(dict_of_group['och'][0])
+    dict_of_group['och'] = dict_of_group['och'][1:]
+
+    president = dict_of_group['och'][0]
+
+
+
+
+
+def proverka_igroka():
+    pass
+
+
+def vibor():
+    pass
+
+
+def liquidation():
+    pass
 
 
 class roles:
@@ -314,17 +391,19 @@ class Cards:
 class CardsOnBoard:
     # два списка: либеральные карты на столе, фашистские карты на столе
     def __init__(self):
-        self.onboard_liberal = []
-        self.onboard_fascist = []
+        self.onboard_liberal = 0
+        self.onboard_fascist = 0
 
-    def move(self, cards):
-        player_choose = cards.card_on_board
-        # сюда добавить что выбирает игрок что откидывает, что откидывается идет в cards.cards_out
-        # остальное идет президенту тоже самое происходит с выбором президента
-        if chosen_card == "liberal":
-            self.onboard_liberal.append(chosen_card)
+    def add(self, card):
+        if card == 'fascist':
+            self.onboard_fascist += 1
         else:
-            self.onboard_fascist.append(chosen_card)
+            self.onboard_liberal += 1
+
+    def check(self):
+        return self.onboard_liberal, self.onboard_fascist
+
+
 
 
 if __name__ == "__main__":
