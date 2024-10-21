@@ -152,8 +152,24 @@ def callback_greet(call):
         text='Ты тут вообще самый злой', show_alert=True)
 
 
+@bot.callback_query_handler(func=lambda call: call.data in ['fascist', "liberal"])
+def callback_greet(call):
+    global waiting_for_answer
+    user_id = call.message.chat.id
+
+    # Удаляем предыдущее сообщение с кнопками
+    if user_id in user_message_ids:
+        bot.delete_message(user_id, user_message_ids[user_id])
+        del user_message_ids[user_id]
+
+    bot.send_message(call.message.chat.id, f'You chose: {call.data}')
+    waiting_for_answer = 0
+
+
+
 @bot.callback_query_handler(func=lambda call: len(call.data.split()) == 2)
 def callback_greet(call):
+    global waiting_for_answer, cards_to_choose_2
     user_id = call.message.chat.id
 
     # Удаляем предыдущее сообщение с кнопками
@@ -162,6 +178,8 @@ def callback_greet(call):
         del user_message_ids[user_id]
 
     bot.send_message(call.message.chat.id, f'Я передал канцлеру данные карты: {list(call.data.split())}')
+    waiting_for_answer = 0
+    cards_to_choose_2 = call.data.split()
 
 
 def first_raspred(dict_of_group):
@@ -176,6 +194,8 @@ def main():
 
 
 def start_game(dict_of_group, president, chancellor):
+    global waiting_for_answer, cards_to_choose_2
+
     coloda = Cards()
     cards_to_choose = coloda.card_on_board()
     # отправляю президенту карты, которые ему выпали, добавить кнопки
@@ -189,12 +209,44 @@ def start_game(dict_of_group, president, chancellor):
     markup.add(btn1, btn2, btn3)
 
     # Отправляем сообщение с клавиатурой
+    waiting_for_answer = 1
     sent_message  = bot.send_message(president,
                     f"okay, mister president: you have cards: {cards_to_choose}"
                     f", выберите карту, от которой хотите избавиться", reply_markup=markup)
 
     # Сохраняем ID отправленного сообщения в памяти пользователя
     user_message_ids[president] = sent_message.message_id
+
+    # останавливаю работу программы до его ответа
+    while waiting_for_answer:
+        pass
+    print('мы вышли из кабалы')
+
+    # теперь к канцлеру
+
+    # Создаем клавиатуру
+    markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+    btn1 = telebot.types.InlineKeyboardButton(cards_to_choose[0],
+                                callback_data=cards_to_choose[0])
+    btn2 = telebot.types.InlineKeyboardButton(cards_to_choose[1],
+                                callback_data=cards_to_choose[1])
+
+    # Добавляем кнопки в клавиатуру
+    markup.add(btn1, btn2)
+
+    # Отправляем сообщение с клавиатурой
+    waiting_for_answer = 1
+    print('мы почти попали обратно')
+    sent_message = bot.send_message(chancellor,
+                                    f"okay, mister chancellor: you have cards: {cards_to_choose_2}"
+                                    f", выберите одну", reply_markup=markup)
+
+    # Сохраняем ID отправленного сообщения в памяти пользователя
+    user_message_ids[president] = sent_message.message_id
+
+    # останавливаю работу программы до его ответа
+    while waiting_for_answer:
+        pass
 
 
 
