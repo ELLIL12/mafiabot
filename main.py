@@ -104,6 +104,11 @@ def send_private_messages(chat_title):
                         markup.add(button1)
                         # Отправляем сообщение с кнопками
                         bot.send_message(user_id, "Привет! Твоя роль: фашистик", reply_markup=markup)
+                        # отправка ролей всех игроков
+                        for i in registered_users[game_code]['id']:
+                            print(i)
+                            bot.send_message(user_id, f"{registered_users[game_code]['names'][i]}: {registered_users[game_code]['id'][i]}")
+
                     elif registered_users[game_code]['id'][user_id] == 'gitler':
                         markup = telebot.types.InlineKeyboardMarkup()
                         button1 = telebot.types.InlineKeyboardButton("гитлер",
@@ -226,10 +231,10 @@ def start_game(dict_of_group, president, chancellor):
 
     # Создаем клавиатуру
     markup = telebot.types.InlineKeyboardMarkup(row_width=1)
-    btn1 = telebot.types.InlineKeyboardButton(cards_to_choose[0],
-                                callback_data=cards_to_choose[0])
-    btn2 = telebot.types.InlineKeyboardButton(cards_to_choose[1],
-                                callback_data=cards_to_choose[1])
+    btn1 = telebot.types.InlineKeyboardButton(cards_to_choose_2[0],
+                                callback_data=cards_to_choose_2[0])
+    btn2 = telebot.types.InlineKeyboardButton(cards_to_choose_2[1],
+                                callback_data=cards_to_choose_2[1])
 
     # Добавляем кнопки в клавиатуру
     markup.add(btn1, btn2)
@@ -242,12 +247,11 @@ def start_game(dict_of_group, president, chancellor):
                                     f", выберите одну", reply_markup=markup)
 
     # Сохраняем ID отправленного сообщения в памяти пользователя
-    user_message_ids[president] = sent_message.message_id
+    user_message_ids[chancellor] = sent_message.message_id
 
     # останавливаю работу программы до его ответа
     while waiting_for_answer:
         pass
-
 
 
 class roles:
