@@ -6,17 +6,21 @@ bot = telebot.TeleBot('7883139018:AAGaMHDoRfVT6K2V7FaGQwETVxrRlP2Wu2M')
 user_dict = {}
 
 # Словарь для хранения зарегистрированных пользователей и их кодов игр
-registered_users = {0: {'group_title': 'haha', 'id': []}, 1: {'group_title': 'Проверка 2', 'group_id': -1002269387767, 'id': [1195384026], 'names': {1195384026: 'Ponyo'}}}
+registered_users = {0: {'group_title': 'haha', 'id': []},
+                    1: {'group_title': 'Проверка 2', 'group_id': -1002269387767, 'id': [1195384026],
+                        'names': {1195384026: 'Ponyo'}}}
 # роли игроков
 roles = []
-# костыль всех костылей, тут типо хранится айди президента, котором отравили сообщение с выбором карты, а значение - это айди сообщения
+# костыль всех костылей, тут типо хранится айди президента, котором отравили сообщение с выбором карты,
+# а значение - это айди сообщения
 user_message_ids = {}
 
 
 # первое взаимодействие с ботом
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.reply_to(message, "Привет, я бот для игры в мафию! Используйте команду /register, чтобы зарегистрироваться для игры.")
+    bot.reply_to(message, "Привет, я бот для игры в мафию! Используйте команду "
+                          "/register, чтобы зарегистрироваться для игры.")
 
 
 # промежуточный этап запроса кода игры
@@ -35,18 +39,19 @@ def process_game_code(message):
         registered_users[int(game_code)]['id'].append(user_id)
         registered_users[int(game_code)]['names'][user_id] = user_name
         # Сохраняем пользователя и код игры в словаре
-        bot.reply_to(message, f"{user_name}, вы успешно зарегистрированы на игру в группе {registered_users[int(game_code)]['group_title']}!")
+        bot.reply_to(message,
+                     f"{user_name}, вы успешно зарегистрированы на игру в группе {registered_users[int(game_code)]['group_title']}!")
     except Exception as e:
         bot.reply_to(message, f"{user_name}, такого номера игры не существует!")
 
     print(registered_users)
 
 
-
 @bot.message_handler(func=lambda message: True)
 def check_message(message):
     if 'играем' in message.text.lower():
-        # блокировка добавлений новых участников, исключение из списка повторяющиеся id, проверка достаточности количества участников
+        # блокировка добавлений новых участников, исключение из списка повторяющиеся id, 
+        # проверка достаточности количества участников
         for game_code in registered_users:
             if registered_users[game_code]['group_title'] == message.chat.title:
                 if len(set(registered_users[game_code]['id'])) > 0:
@@ -71,13 +76,15 @@ def check_message(message):
         markup.add(button)
         # добавляем в словарь с регистрацией название группы и ее номер
         group_title = message.chat.title
-        registered_users[max(registered_users) + 1] = {'group_title': group_title, 'group_id': message.chat.id, 'names': {}}
+        registered_users[max(registered_users) + 1] = {'group_title': group_title, 'group_id': message.chat.id,
+                                                       'names': {}}
         registered_users[max(registered_users)]['id'] = []
 
         # Отправляем сообщение с клавиатурой
-        bot.send_message(message.chat.id, f"Привет всем! Я - бот для игры в мафию. Уникальный кот вашей игры - {max(registered_users)}. "
-                              f"\n Все пользователи, желающие сыграть, напишите мне в личные сообщения команду \register"
-                                          f"\n Когда все желающие играть, будут зарегестрированы, напишите: играть, и мы начнем игру",
+        bot.send_message(message.chat.id,
+                         f"Привет всем! Я - бот для игры в мафию. Уникальный кот вашей игры - {max(registered_users)}. "
+                         f"\n Все пользователи, желающие сыграть, напишите мне в личные сообщения команду \register"
+                         f"\n Когда все желающие играть, будут зарегестрированы, напишите: играть, и мы начнем игру",
                          reply_markup=markup)
 
 
@@ -87,7 +94,7 @@ def send_private_messages(chat_title):
         if registered_users[game_code]['group_title'] == chat_title:
             try:
                 # вызов класса и присвоение ролей игрокам
-                player_role = roles(registered_users[game_code]['id'])
+                player_role = role_for_everyone(registered_users[game_code]['id'])
                 registered_users[game_code]['id'] = player_role.role_for_all()
 
                 for user_id in registered_users[game_code]['id']:
@@ -108,7 +115,8 @@ def send_private_messages(chat_title):
                         # отправка ролей всех игроков
                         for i in registered_users[game_code]['id']:
                             print(i)
-                            bot.send_message(user_id, f"{registered_users[game_code]['names'][i]}: {registered_users[game_code]['id'][i]}")
+                            bot.send_message(user_id,
+                                             f"{registered_users[game_code]['names'][i]}: {registered_users[game_code]['id'][i]}")
 
                     elif registered_users[game_code]['id'][user_id] == 'gitler':
                         markup = telebot.types.InlineKeyboardMarkup()
@@ -133,8 +141,7 @@ def send_private_messages(chat_title):
                 print(f"Ошибка: {e}")
 
 
-# вызов описания персонажа, следует написать описания всех персонажей
-
+# нажата кнопка, я фашист, но что это
 @bot.callback_query_handler(func=lambda call: call.data == "фашистик")
 def callback_greet(call):
     bot.answer_callback_query(
@@ -142,6 +149,7 @@ def callback_greet(call):
         text='Ты тут злой', show_alert=True)
 
 
+# нажата кнопка, я либерал, но что это
 @bot.callback_query_handler(func=lambda call: call.data == "либерал")
 def callback_greet(call):
     bot.answer_callback_query(
@@ -149,6 +157,7 @@ def callback_greet(call):
         text='Борешься зо злом', show_alert=True)
 
 
+# нажата кнопка, я гитлер, но что это
 @bot.callback_query_handler(func=lambda call: call.data == "гитлер")
 def callback_greet(call):
     bot.answer_callback_query(
@@ -156,6 +165,37 @@ def callback_greet(call):
         text='Ты тут вообще самый злой', show_alert=True)
 
 
+# нажата кнопка проверки игрока
+@bot.callback_query_handler(func=lambda call: call.data[:2] == 'di')
+def callback_greet(call):
+    global waiting_for_answer, check_player
+
+    user_id = call.message.chat.id
+    check_player = int(call.data[2:])
+    # Удаляем предыдущее сообщение с кнопками
+    if user_id in user_message_ids:
+        bot.delete_message(user_id, user_message_ids[user_id])
+        del user_message_ids[user_id]
+
+    waiting_for_answer = 0
+
+
+# нажата кнопка ликвидации игрока
+@bot.callback_query_handler(func=lambda call: call.data[:2] == 'ki')
+def callback_greet(call):
+    global waiting_for_answer, kill_player
+
+    user_id = call.message.chat.id
+    kill_player = int(call.data[2:])
+    # Удаляем предыдущее сообщение с кнопками
+    if user_id in user_message_ids:
+        bot.delete_message(user_id, user_message_ids[user_id])
+        del user_message_ids[user_id]
+
+    waiting_for_answer = 0
+
+
+# нажата кнопка выбора игрока канцлером
 @bot.callback_query_handler(func=lambda call: call.data[:2] == 'id')
 def callback_greet(call):
     global waiting_for_answer, chancellor
@@ -172,6 +212,7 @@ def callback_greet(call):
     waiting_for_answer = 0
 
 
+# нажата кнопка выбора карты канцлером
 @bot.callback_query_handler(func=lambda call: call.data in ['fascist', "liberal"])
 def callback_greet(call):
     global waiting_for_answer
@@ -187,8 +228,7 @@ def callback_greet(call):
     waiting_for_answer = call.data
 
 
-
-
+# нажата кнопка выбора карты для исключения президентом
 @bot.callback_query_handler(func=lambda call: len(call.data.split()) == 2)
 def callback_greet(call):
     global waiting_for_answer, cards_to_choose_2
@@ -217,134 +257,198 @@ def main():
 
 def start_game(dict_of_group, president):
     global waiting_for_answer, cards_to_choose_2, chancellor, answer
-    answer = 0
-    dict_of_group['rejection'] = 0
-    # избрание президента и канцлера
-    while answer == 0 and dict_of_group['rejection'] < 3:
-        dict_of_group['rejection'] += 1
-        # выбор президента
-        president = dict_of_group['och'][0]
-        dict_of_group['och'].append(dict_of_group['och'][0])
-        dict_of_group['och'] = dict_of_group['och'][1:]
+    coloda = Cards()
+    pole = CardsOnBoard()
+    while True:
+        answer = 0
+        dict_of_group['rejection'] = 0
+        # избрание президента и канцлера
+        while answer == 0 and dict_of_group['rejection'] < 3:
+            dict_of_group['rejection'] += 1
+            # выбор президента
+            president = dict_of_group['och'][0]
+            dict_of_group['och'].append(dict_of_group['och'][0])
+            dict_of_group['och'] = dict_of_group['och'][1:]
 
-        # выбор канцлера президентом
+            # выбор канцлера президентом
+            markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+            kostl = []
+            for i in dict_of_group['och']:
+                kostl.append(telebot.types.InlineKeyboardButton(dict_of_group['names'][i], callback_data='id' + str(i)))
+
+            markup.add(*kostl)
+
+            waiting_for_answer = 1
+            sent_message = bot.send_message(president,
+                                            f"okay, mister president, you can choose the chancellor",
+                                            reply_markup=markup)
+
+            # Сохраняем ID отправленного сообщения в памяти пользователя
+            user_message_ids[president] = sent_message.message_id
+
+            while waiting_for_answer == 1:
+                pass
+
+            waiting_for_answer = 1
+            send_poll(dict_of_group['group_id'], f"President: {dict_of_group['names'][president]}, "
+                                                 f"Chancellor: {dict_of_group['names'][chancellor]}")
+            while waiting_for_answer == 1:
+                pass
+
+        # счетчик отказов на ноль
+        dict_of_group['rejection'] = 0
+
+        cards_to_choose = coloda.card_on_board()
+        # отправляю президенту карты, которые ему выпали, добавить кнопки
+        # Создаем клавиатуру
         markup = telebot.types.InlineKeyboardMarkup(row_width=1)
-        kostl = []
-        for i in dict_of_group['och']:
-            kostl.append(telebot.types.InlineKeyboardButton(dict_of_group['names'][i], callback_data='id'+str(i)))
+        btn1 = telebot.types.InlineKeyboardButton(cards_to_choose[0],
+                                                  callback_data=cards_to_choose[1] + ' ' + cards_to_choose[2])
+        btn2 = telebot.types.InlineKeyboardButton(cards_to_choose[1],
+                                                  callback_data=cards_to_choose[0] + ' ' + cards_to_choose[2])
+        btn3 = telebot.types.InlineKeyboardButton(cards_to_choose[2],
+                                                  callback_data=cards_to_choose[0] + ' ' + cards_to_choose[1])
 
-        markup.add(*kostl)
+        # Добавляем кнопки в клавиатуру
+        markup.add(btn1, btn2, btn3)
 
+        # Отправляем сообщение с клавиатурой
         waiting_for_answer = 1
         sent_message = bot.send_message(president,
-                                        f"okay, mister president, you can choose the chancellor", reply_markup=markup)
+                                        f"okay, mister president: you have cards: {cards_to_choose}"
+                                        f", выберите карту, от которой хотите избавиться", reply_markup=markup)
 
         # Сохраняем ID отправленного сообщения в памяти пользователя
         user_message_ids[president] = sent_message.message_id
 
-        while waiting_for_answer == 1:
+        # останавливаю работу программы до его ответа
+        while waiting_for_answer:
             pass
+        print('мы вышли из кабалы')
 
+        # теперь к канцлеру
+
+        # Создаем клавиатуру
+        markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+        btn1 = telebot.types.InlineKeyboardButton(cards_to_choose_2[0],
+                                                  callback_data=cards_to_choose_2[0])
+        btn2 = telebot.types.InlineKeyboardButton(cards_to_choose_2[1],
+                                                  callback_data=cards_to_choose_2[1])
+
+        # Добавляем кнопки в клавиатуру
+        markup.add(btn1, btn2)
+
+        # Отправляем сообщение с клавиатурой
         waiting_for_answer = 1
-        send_poll(dict_of_group['group_id'], f"President: {dict_of_group['names'][president]}, "
-                                             f"Chancellor: {dict_of_group['names'][chancellor]}")
+        print('мы почти попали обратно')
+        sent_message = bot.send_message(chancellor,
+                                        f"okay, mister chancellor: you have cards: {cards_to_choose_2}"
+                                        f", выберите одну", reply_markup=markup)
+
+        # Сохраняем ID отправленного сообщения в памяти пользователя
+        user_message_ids[chancellor] = sent_message.message_id
+
+        # останавливаю работу программы до его ответа
         while waiting_for_answer == 1:
             pass
 
-    # счетчик отказов на ноль
-    dict_of_group['rejection'] = 0
+        dict_of_group['last_card'] = waiting_for_answer
+
+        # поставить карту на поле
+        pole.add(waiting_for_answer)
+
+        onboard_liberal, onboard_fascist = pole.check()
+
+        # выполнение особого протокола в зависимости от количества карт на столе
+        if onboard_fascist == 2:
+            proverka_igroka(dict_of_group, president)
+
+        elif onboard_fascist == 1:
+            dict_of_group = vibor(dict_of_group, president)
+
+        elif onboard_fascist == 4 or onboard_fascist == 5:
+            liquidation(dict_of_group, president)
 
 
-    coloda = Cards()
-    pole = CardsOnBoard()
-
-    cards_to_choose = coloda.card_on_board()
-    # отправляю президенту карты, которые ему выпали, добавить кнопки
-    # Создаем клавиатуру
+def proverka_igroka(dict_of_group, president):
+    global check_player, waiting_for_answer
     markup = telebot.types.InlineKeyboardMarkup(row_width=1)
-    btn1 = telebot.types.InlineKeyboardButton(cards_to_choose[0], callback_data=cards_to_choose[1] + ' ' + cards_to_choose[2])
-    btn2 = telebot.types.InlineKeyboardButton(cards_to_choose[1], callback_data=cards_to_choose[0] + ' ' + cards_to_choose[2])
-    btn3 = telebot.types.InlineKeyboardButton(cards_to_choose[2], callback_data=cards_to_choose[0] + ' ' + cards_to_choose[1])
+    kostl = []
+    for i in dict_of_group['och']:
+        kostl.append(telebot.types.InlineKeyboardButton(dict_of_group['names'][i], callback_data='di' + str(i)))
 
-    # Добавляем кнопки в клавиатуру
-    markup.add(btn1, btn2, btn3)
-
-    # Отправляем сообщение с клавиатурой
+    markup.add(*kostl)
     waiting_for_answer = 1
-    sent_message  = bot.send_message(president,
-                    f"okay, mister president: you have cards: {cards_to_choose}"
-                    f", выберите карту, от которой хотите избавиться", reply_markup=markup)
+    sent_message = bot.send_message(president,
+                                    f"okay, mister president, you can check one player's role", reply_markup=markup)
 
     # Сохраняем ID отправленного сообщения в памяти пользователя
     user_message_ids[president] = sent_message.message_id
 
-    # останавливаю работу программы до его ответа
-    while waiting_for_answer:
-        pass
-    print('мы вышли из кабалы')
-
-    # теперь к канцлеру
-
-    # Создаем клавиатуру
-    markup = telebot.types.InlineKeyboardMarkup(row_width=1)
-    btn1 = telebot.types.InlineKeyboardButton(cards_to_choose_2[0],
-                                callback_data=cards_to_choose_2[0])
-    btn2 = telebot.types.InlineKeyboardButton(cards_to_choose_2[1],
-                                callback_data=cards_to_choose_2[1])
-
-    # Добавляем кнопки в клавиатуру
-    markup.add(btn1, btn2)
-
-    # Отправляем сообщение с клавиатурой
-    waiting_for_answer = 1
-    print('мы почти попали обратно')
-    sent_message = bot.send_message(chancellor,
-                                    f"okay, mister chancellor: you have cards: {cards_to_choose_2}"
-                                    f", выберите одну", reply_markup=markup)
-
-    # Сохраняем ID отправленного сообщения в памяти пользователя
-    user_message_ids[chancellor] = sent_message.message_id
-
-    # останавливаю работу программы до его ответа
     while waiting_for_answer == 1:
         pass
 
-    dict_of_group['last_card'] = waiting_for_answer
-
-    # поставить карту на поле
-    pole.add(waiting_for_answer)
-
-    onboard_liberal, onboard_fascist = pole.check()
-
-    # выполнение особого протокола в зависимости от количества карт на столе
-    if onboard_fascist == 2:
-        proverka_igroka()
-
-    elif onboard_fascist == 3:
-        vibor()
-
-    elif onboard_fascist == 4 or onboard_fascist == 5:
-        liquidation()
+    bot.send_message(president, f"Player {dict_of_group['names'][check_player]} is {dict_of_group['id'][check_player]}")
 
 
+def vibor(dict_of_group, president):
+    global check_player, waiting_for_answer
+    markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+    kostl = []
+    for i in dict_of_group['och']:
+        kostl.append(telebot.types.InlineKeyboardButton(dict_of_group['names'][i], callback_data='di' + str(i)))
 
-def proverka_igroka():
-    pass
+    markup.add(*kostl)
+    waiting_for_answer = 1
+    sent_message = bot.send_message(president,
+                                    f"okay, mister president, you can choose next president", reply_markup=markup)
+
+    # Сохраняем ID отправленного сообщения в памяти пользователя
+    user_message_ids[president] = sent_message.message_id
+
+    while waiting_for_answer == 1:
+        pass
+
+    bot.send_message(president, f"Player {dict_of_group['names'][check_player]} is new president")
+    ind = dict_of_group['och'].index(check_player)
+    dict_of_group['och'] = dict_of_group['och'][ind:] + dict_of_group['och'][:ind]
+    return dict_of_group
 
 
-def vibor():
-    pass
+def liquidation(dict_of_group, president):
+    global kill_player, waiting_for_answer
+    markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+    kostl = []
+    for i in dict_of_group['och']:
+        kostl.append(telebot.types.InlineKeyboardButton(dict_of_group['names'][i], callback_data='ki' + str(i)))
 
+    markup.add(*kostl)
+    waiting_for_answer = 1
+    sent_message = bot.send_message(president,
+                                    f"okay, mister president, you can kill one player", reply_markup=markup)
 
-def liquidation():
-    pass
+    # Сохраняем ID отправленного сообщения в памяти пользователя
+    user_message_ids[president] = sent_message.message_id
+
+    while waiting_for_answer == 1:
+        pass
+
+    bot.send_message(president, f"Player {dict_of_group['names'][kill_player]} was killed")
+
+    # удаление убитого из всех списков
+    del dict_of_group['names'][kill_player]
+    del dict_of_group['id'][kill_player]
+    dict_of_group['och'].remove(kill_player)
+    print(dict_of_group)
+
+    bot.send_message(kill_player, f"You was killed")
 
 
 # Функция для отправки опроса
 def send_poll(GROUP_ID, stroka):
     poll_message = bot.send_poll(
         chat_id=GROUP_ID,
-        question=stroka+", Вы согласны?",
+        question=stroka + ", Вы согласны?",
         options=["Да", "Нет"],
         is_anonymous=False
     )
@@ -369,39 +473,41 @@ def collect_poll_results(chat_id, message_id):
     bot.send_message(chat_id, results_text)
     waiting_for_answer = 0
 
-class roles:
-    def __init__(self, sps):
-        self.count_of_membres = len(sps)
+
+class role_for_everyone:
+    def __init__(self, sps: list):
+        self.count_of_players = len(sps)
         self.players = list(sps)
         print(sps)
         self.players_roles = {}
         self.roles = []
 
     def roles_from_count(self):
-        if self.count_of_membres == 5:
+        if self.count_of_players == 5:
             self.roles = ['liberal', 'liberal', 'liberal', 'fascist', 'hitler']
-        elif self.count_of_membres == 6:
+        elif self.count_of_players == 6:
             self.roles = ['liberal', 'liberal', 'liberal', 'liberal', 'fascist', 'hitler']
-        elif self.count_of_membres == 7:
+        elif self.count_of_players == 7:
             self.roles = ['liberal', 'liberal', 'liberal', 'liberal', 'fascist', 'fascist', 'hitler']
-        elif self.count_of_membres == 8:
+        elif self.count_of_players == 8:
             self.roles = ['liberal', 'liberal', 'liberal', 'liberal', 'liberal', 'fascist', 'fascist', 'hitler']
-        elif self.count_of_membres == 9:
-            self.roles = ['liberal', 'liberal', 'liberal', 'liberal', 'liberal', 'fascist', 'fascist', 'fascist', 'hitler']
-        elif self.count_of_membres == 10:
-            self.roles = ['liberal', 'liberal', 'liberal', 'liberal', 'liberal', 'liberal', 'fascist', 'fascist', 'fascist',
-                          'hitler']
+        elif self.count_of_players == 9:
+            self.roles = ['liberal', 'liberal', 'liberal', 'liberal', 'liberal', 'fascist', 'fascist',
+                          'fascist', 'hitler']
+        elif self.count_of_players == 10:
+            self.roles = ['liberal', 'liberal', 'liberal', 'liberal', 'liberal', 'liberal', 'fascist',
+                          'fascist', 'fascist', 'hitler']
         # test
-        elif self.count_of_membres == 2:
+        elif self.count_of_players == 2:
             self.roles = ['fascist', 'liberal']
-        elif self.count_of_membres == 1:
+        elif self.count_of_players == 1:
             self.roles = ['liberal']
         return self.roles
 
     def role_for_all(self):
         self.roles = self.roles_from_count()
         random.shuffle(self.roles)
-        for i in range(self.count_of_membres):
+        for i in range(self.count_of_players):
             self.players_roles[self.players[i]] = self.roles[i]
         return self.players_roles
 
@@ -409,19 +515,19 @@ class roles:
 # Класс карточек законов
 class Cards:
     def __init__(self):
-        self.cards_in = ["fascist"] * 11 + ["liberal"] * 6     # карты в колоде
-        self.cards_out = []     # сюда надо складывать карты, которые откинули игроки
+        self.cards_in = ["fascist"] * 11 + ["liberal"] * 6  # карты в колоде
+        self.cards_out = []  # сюда надо складывать карты, которые откинули игроки
 
     # выкладка закона на стол
     def card_on_board(self):
         if len(self.cards_in) < 3:
             self.cards_in = self.cards_out + self.cards_in
             self.cards_out = []
-        card = [random.choice(self.cards_in)] # Рандомно выбираем первую карту
+        card = [random.choice(self.cards_in)]  # Рандомно выбираем первую карту
         self.cards_in.remove(card[0])  # Удаляем 1 карту из списка карт в колоде
-        card = card + [random.choice(self.cards_in)] # Рандомно выбираем вторую карту закидываем обе карты в общий список
-        self.cards_in.remove(card[1]) # Удаляем 2 карту из списка
-        card = card + [random.choice(self.cards_in)]    # Рандомно выбираем третью карту закидываем три карты в общий список
+        card = card + [random.choice(self.cards_in)]  # Рандомно выбираем 2 карту закидываем обе карты в общий список
+        self.cards_in.remove(card[1])  # Удаляем 2 карту из списка
+        card = card + [random.choice(self.cards_in)]  # Рандомно выбираем 3 карту закидываем три карты в общий список
         self.cards_in.remove(card[2])  # Удаляем 3 карту из списка
         return card
 
@@ -440,8 +546,6 @@ class CardsOnBoard:
 
     def check(self):
         return self.onboard_liberal, self.onboard_fascist
-
-
 
 
 if __name__ == "__main__":
