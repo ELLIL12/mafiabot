@@ -98,6 +98,7 @@ def send_private_messages(chat_title):
                 registered_users[game_code]['id'] = player_role.role_for_all()
 
                 for user_id in registered_users[game_code]['id']:
+                    print(user_id, registered_users[game_code]['id'][user_id])
                     if registered_users[game_code]['id'][user_id] == 'liberal':
                         markup = telebot.types.InlineKeyboardMarkup()
                         button1 = telebot.types.InlineKeyboardButton("либерал",
@@ -126,17 +127,17 @@ def send_private_messages(chat_title):
                         # Отправляем сообщение с кнопками
                         bot.send_message(user_id, "Привет! Твоя роль: гитлер", reply_markup=markup)
 
-                    # выбор первых президента и канцлера
-                    registered_users[game_code] = first_raspred(registered_users[game_code])
-                    print(registered_users[game_code]['och'])
-                    president = registered_users[game_code]['och'][0]
+                # выбор первых президента и канцлера
+                registered_users[game_code] = first_raspred(registered_users[game_code])
+                print(registered_users[game_code]['och'])
+                president = registered_users[game_code]['och'][0]
 
-                    # отправка сообщения в общую группу, нде идет разглашение того, кто является президентом и канцлером
-                    bot.send_message(registered_users[game_code]['group_id'],
-                                     f"Вот типо начали, your first president: "
-                                     f"{registered_users[game_code]['names'][president]}")
-                    # запуск основной игры
-                    start_game(registered_users[game_code], president)
+                # отправка сообщения в общую группу, нде идет разглашение того, кто является президентом и канцлером
+                bot.send_message(registered_users[game_code]['group_id'],
+                                 f"Вот типо начали, your first president: "
+                                 f"{registered_users[game_code]['names'][president]}")
+                # запуск основной игры
+                start_game(registered_users[game_code], president)
             except Exception as e:
                 print(f"Ошибка: {e}")
 
@@ -297,10 +298,12 @@ def start_game(dict_of_group, president):
 
         # счетчик отказов на ноль
         dict_of_group['rejection'] = 0
+        print('here')
 
         cards_to_choose = coloda.card_on_board()
         # отправляю президенту карты, которые ему выпали, добавить кнопки
         # Создаем клавиатуру
+        print('here2')
         markup = telebot.types.InlineKeyboardMarkup(row_width=1)
         btn1 = telebot.types.InlineKeyboardButton(cards_to_choose[0],
                                                   callback_data=cards_to_choose[1] + ' ' + cards_to_choose[2])
@@ -308,6 +311,7 @@ def start_game(dict_of_group, president):
                                                   callback_data=cards_to_choose[0] + ' ' + cards_to_choose[2])
         btn3 = telebot.types.InlineKeyboardButton(cards_to_choose[2],
                                                   callback_data=cards_to_choose[0] + ' ' + cards_to_choose[1])
+        print('here')
 
         # Добавляем кнопки в клавиатуру
         markup.add(btn1, btn2, btn3)
@@ -358,16 +362,38 @@ def start_game(dict_of_group, president):
         pole.add(waiting_for_answer)
 
         onboard_liberal, onboard_fascist = pole.check()
+        print(onboard_liberal, onboard_fascist)
 
         # выполнение особого протокола в зависимости от количества карт на столе
-        if onboard_fascist == 2:
+        if onboard_fascist > 3 and dict_of_group['id'][president] == 'gitler':
+            win(dict_of_group, 'fascist')
+            dict_of_group = {}
+
+        elif onboard_fascist == 2:
             proverka_igroka(dict_of_group, president)
 
-        elif onboard_fascist == 1:
+        elif onboard_fascist == 3:
             dict_of_group = vibor(dict_of_group, president)
 
         elif onboard_fascist == 4 or onboard_fascist == 5:
-            liquidation(dict_of_group, president)
+            died = liquidation(dict_of_group, president)
+            print(died)
+            if died == 'gitler':
+                win(dict_of_group, 'liberal')
+                dict_of_group = {}
+
+        elif onboard_fascist == 6:
+            win(dict_of_group, 'fascist')
+            dict_of_group = {}
+
+        elif onboard_liberal == 5:
+            win(dict_of_group, 'liberal')
+            dict_of_group = {}
+
+
+
+def win(dict_of_group, who: str):
+    bot.send_message(dict_of_group['group_id'], f"{who} won")
 
 
 def proverka_igroka(dict_of_group, president):
@@ -434,6 +460,7 @@ def liquidation(dict_of_group, president):
         pass
 
     bot.send_message(president, f"Player {dict_of_group['names'][kill_player]} was killed")
+    died = dict_of_group['id'][kill_player]
 
     # удаление убитого из всех списков
     del dict_of_group['names'][kill_player]
@@ -442,6 +469,8 @@ def liquidation(dict_of_group, president):
     print(dict_of_group)
 
     bot.send_message(kill_player, f"You was killed")
+
+    return died
 
 
 # Функция для отправки опроса
@@ -454,7 +483,7 @@ def send_poll(GROUP_ID, stroka):
     )
 
     # Запускаем таймер для сбора результатов через 30 секунд
-    Timer(10.0, collect_poll_results, [poll_message.chat.id, poll_message.message_id]).start()
+    Timer(5.0, collect_poll_results, [poll_message.chat.id, poll_message.message_id]).start()
 
 
 # Функция для получения результатов опроса
@@ -509,6 +538,7 @@ class role_for_everyone:
         random.shuffle(self.roles)
         for i in range(self.count_of_players):
             self.players_roles[self.players[i]] = self.roles[i]
+        print(self.players_roles)
         return self.players_roles
 
 
@@ -521,13 +551,18 @@ class Cards:
     # выкладка закона на стол
     def card_on_board(self):
         if len(self.cards_in) < 3:
+            print(self.cards_out, self.cards_in)
             self.cards_in = self.cards_out + self.cards_in
             self.cards_out = []
+            print(self.cards_out, self.cards_in)
         card = [random.choice(self.cards_in)]  # Рандомно выбираем первую карту
+        self.cards_out.append(card[0])
         self.cards_in.remove(card[0])  # Удаляем 1 карту из списка карт в колоде
         card = card + [random.choice(self.cards_in)]  # Рандомно выбираем 2 карту закидываем обе карты в общий список
+        self.cards_out.append(card[1])
         self.cards_in.remove(card[1])  # Удаляем 2 карту из списка
         card = card + [random.choice(self.cards_in)]  # Рандомно выбираем 3 карту закидываем три карты в общий список
+        self.cards_out.append(card[2])
         self.cards_in.remove(card[2])  # Удаляем 3 карту из списка
         return card
 
