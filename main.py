@@ -1,5 +1,6 @@
 import telebot
 import random
+from threading import Timer
 
 bot = telebot.TeleBot('7883139018:AAGaMHDoRfVT6K2V7FaGQwETVxrRlP2Wu2M')
 user_dict = {}
@@ -215,27 +216,43 @@ def main():
 
 
 def start_game(dict_of_group, president):
-    global waiting_for_answer, cards_to_choose_2, chancellor
+    global waiting_for_answer, cards_to_choose_2, chancellor, answer
+    answer = 0
+    dict_of_group['rejection'] = 0
+    # избрание президента и канцлера
+    while answer == 0 and dict_of_group['rejection'] < 3:
+        dict_of_group['rejection'] += 1
+        # выбор президента
+        president = dict_of_group['och'][0]
+        dict_of_group['och'].append(dict_of_group['och'][0])
+        dict_of_group['och'] = dict_of_group['och'][1:]
 
-    # выбор канцлера президентом
+        # выбор канцлера президентом
+        markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+        kostl = []
+        for i in dict_of_group['och']:
+            kostl.append(telebot.types.InlineKeyboardButton(dict_of_group['names'][i], callback_data='id'+str(i)))
 
-    markup = telebot.types.InlineKeyboardMarkup(row_width=1)
-    kostl = []
-    for i in dict_of_group['och']:
-        kostl.append(telebot.types.InlineKeyboardButton(dict_of_group['names'][i], callback_data='id'+str(i)))
+        markup.add(*kostl)
 
-    markup.add(*kostl)
+        waiting_for_answer = 1
+        sent_message = bot.send_message(president,
+                                        f"okay, mister president, you can choose the chancellor", reply_markup=markup)
 
-    waiting_for_answer = 1
-    sent_message = bot.send_message(president,
-                                    f"okay, mister president, you can choose the chancellor", reply_markup=markup)
+        # Сохраняем ID отправленного сообщения в памяти пользователя
+        user_message_ids[president] = sent_message.message_id
 
-    # Сохраняем ID отправленного сообщения в памяти пользователя
-    user_message_ids[president] = sent_message.message_id
+        while waiting_for_answer == 1:
+            pass
 
-    while waiting_for_answer == 1:
-        pass
+        waiting_for_answer = 1
+        send_poll(dict_of_group['group_id'], f"President: {dict_of_group['names'][president]}, "
+                                             f"Chancellor: {dict_of_group['names'][chancellor]}")
+        while waiting_for_answer == 1:
+            pass
 
+    # счетчик отказов на ноль
+    dict_of_group['rejection'] = 0
 
 
     coloda = Cards()
@@ -309,14 +326,6 @@ def start_game(dict_of_group, president):
     elif onboard_fascist == 4 or onboard_fascist == 5:
         liquidation()
 
-    # выбор нового президента
-    dict_of_group['och'].append(dict_of_group['och'][0])
-    dict_of_group['och'] = dict_of_group['och'][1:]
-
-    president = dict_of_group['och'][0]
-
-
-
 
 
 def proverka_igroka():
@@ -330,6 +339,35 @@ def vibor():
 def liquidation():
     pass
 
+
+# Функция для отправки опроса
+def send_poll(GROUP_ID, stroka):
+    poll_message = bot.send_poll(
+        chat_id=GROUP_ID,
+        question=stroka+", Вы согласны?",
+        options=["Да", "Нет"],
+        is_anonymous=False
+    )
+
+    # Запускаем таймер для сбора результатов через 30 секунд
+    Timer(10.0, collect_poll_results, [poll_message.chat.id, poll_message.message_id]).start()
+
+
+# Функция для получения результатов опроса
+def collect_poll_results(chat_id, message_id):
+    global answer, waiting_for_answer
+    poll_results = bot.stop_poll(chat_id, message_id)
+
+    # Подготовка и отправка результатов
+    if poll_results.options[0].voter_count > poll_results.options[1].voter_count:
+        results_text = f'President and chancellor chosen'
+        answer = 1
+    else:
+        results_text = f'('
+        answer = 0
+
+    bot.send_message(chat_id, results_text)
+    waiting_for_answer = 0
 
 class roles:
     def __init__(self, sps):
